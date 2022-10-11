@@ -29,6 +29,10 @@
 #include "stm32l475e_iot01_gyro.h"
 #include "stm32l475e_iot01_accelero.h"
 
+// TODO change your server ip and port
+#define SERVER_IP "192.168.50.51"
+#define SERVER_PORT 5000
+
 #if MBED_CONF_APP_USE_TLS_SOCKET
 #include "root_ca_cert.h"
 
@@ -112,11 +116,11 @@ public:
 
         SocketAddress address;
 
-        if (!resolve_hostname(address)) {
+        if (!address.set_ip_address(SERVER_IP)) {
             return;
         }
 
-        address.set_port(REMOTE_PORT);
+        address.set_port(SERVER_PORT);
 
         /* we are connected to the network but since we're using a connection oriented
          * protocol we still need to open a connection on the socket */
@@ -136,15 +140,9 @@ public:
                 //ThisThread::sleep_for(10s);
                 //continue;
             }
-
-            if (!receive_http_response()) {
-                break;
-                //ThisThread::sleep_for(10s);
-                //continue;
-            }
             
-            printf("--- HTTP exchange is successful ---\r\n");
-            ThisThread::sleep_for(10s);
+            printf("--- message sending is successful ---\r\n");
+            ThisThread::sleep_for(3s);
         }
 
         printf("Socket run has finished\r\n");
@@ -171,13 +169,14 @@ private:
     bool send_http_request()
     {
         /* loop until whole request sent */
-        const char head[] = "GET / HTTP/1.1\r\n"
+        /*const char head[] = "GET / HTTP/1.1\r\n"
                             "Host: ifconfig.io\r\n"
                             "Connection: close\r\n"
                             "\r\n";
+        */
         char *buffer = (char *) malloc(sizeof(char) * 200);
         buffer[0] = '\0';
-        strcat(buffer, head);
+        //strcat(buffer, head);
         read_sensor(buffer);
 
         nsapi_size_t bytes_to_send = strlen(buffer);
@@ -291,7 +290,7 @@ void read_sensor(char *buffer)
 
     sensor_value = BSP_TSENSOR_ReadTemp();
     //printf("\n\tTEMPERATURE = %.2f degC\n", sensor_value);
-    snprintf(inner_buf, 50, "TEMPERATURE = %.2f degC\n", sensor_value);
+    snprintf(inner_buf, 50, "\nTEMPERATURE = %.2f degC\n", sensor_value);
     strcat(buffer, inner_buf);
 
     sensor_value = BSP_HSENSOR_ReadHumidity();
