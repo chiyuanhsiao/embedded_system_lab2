@@ -31,7 +31,9 @@
 
 // TODO change your server ip and port
 #define SERVER_IP "192.168.50.51"
-#define SERVER_PORT 5000
+#define SERVER_PORT 1028
+// TODO time interval between each sending message
+#define TIME_INTERVAL 3s
 
 #if MBED_CONF_APP_USE_TLS_SOCKET
 #include "root_ca_cert.h"
@@ -43,7 +45,7 @@
 
 class SocketDemo;
 DigitalOut led(LED1);
-void read_sensor(char *buffer);
+void read_sensor(char *buffer, int sample_num);
 
 class SocketDemo {
     static constexpr size_t MAX_NUMBER_OF_ACCESS_POINTS = 10;
@@ -133,16 +135,18 @@ public:
             return;
         }
 
-        /* exchange an HTTP request and response */
+        /* exchange an HTTP request */
+        int sample_num = 0;
         while (1) {
-            if (!send_http_request()) {
+            if (!send_http_request(sample_num)) {
                 break;
                 //ThisThread::sleep_for(10s);
                 //continue;
             }
             
-            printf("--- message sending is successful ---\r\n");
-            ThisThread::sleep_for(3s);
+            printf("--- Sending of message No.%d is successful ---\r\n", sample_num);
+            sample_num++;
+            ThisThread::sleep_for(TIME_INTERVAL);
         }
 
         printf("Socket run has finished\r\n");
@@ -166,7 +170,7 @@ private:
         return true;
     }
 
-    bool send_http_request()
+    bool send_http_request(int sample_num)
     {
         /* loop until whole request sent */
         /*const char head[] = "GET / HTTP/1.1\r\n"
@@ -177,7 +181,7 @@ private:
         char *buffer = (char *) malloc(sizeof(char) * 200);
         buffer[0] = '\0';
         //strcat(buffer, head);
-        read_sensor(buffer);
+        read_sensor(buffer, sample_num);
 
         nsapi_size_t bytes_to_send = strlen(buffer);
         nsapi_size_or_error_t bytes_sent = 0;
@@ -276,7 +280,7 @@ private:
 #endif // MBED_CONF_APP_USE_TLS_SOCKET
 };
 
-void read_sensor(char *buffer)
+void read_sensor(char *buffer, int sample_num)
 {
     float sensor_value = 0;
     int16_t pDataXYZ[3] = {0};
@@ -288,59 +292,41 @@ void read_sensor(char *buffer)
 
     led = 1;
 
+    strcat(buffer, "\n{\n");
+
     sensor_value = BSP_TSENSOR_ReadTemp();
-    //printf("\n\tTEMPERATURE = %.2f degC\n", sensor_value);
-    snprintf(inner_buf, 50, "\nTEMPERATURE = %.2f degC\n", sensor_value);
+    snprintf(inner_buf, 50, "\t\"TEMPERATURE\": %.2f, \n", sensor_value);
     strcat(buffer, inner_buf);
 
     sensor_value = BSP_HSENSOR_ReadHumidity();
-    //printf("\tHUMIDITY    = %.2f %%\n", sensor_value);
-    snprintf(inner_buf, 50, "HUMIDITY    = %.2f %%\n", sensor_value);
+    snprintf(inner_buf, 50, "\t\"HUMIDITY\": %.2f, \n", sensor_value);
     strcat(buffer, inner_buf);
 
     sensor_value = BSP_PSENSOR_ReadPressure();
-    //printf("\tPRESSURE is = %.2f mBar\n", sensor_value);
-    snprintf(inner_buf, 50, "PRESSURE is = %.2f mBar\n", sensor_value);
+    snprintf(inner_buf, 50, "\t\"PRESSURE\": %.2f, \n", sensor_value);
     strcat(buffer, inner_buf);
 
-    led = 0;
+    //led = 0;
 
-    ThisThread::sleep_for(1s);
+    //ThisThread::sleep_for(1s);
 
-    led = 1;
+    //led = 1;
 
     BSP_MAGNETO_GetXYZ(pDataXYZ);
-    //printf("\n\tMAGNETO_X = %d\n", pDataXYZ[0]);
-    snprintf(inner_buf, 50, "\nMAGNETO_X = %d\n", pDataXYZ[0]);
-    strcat(buffer, inner_buf);
-    //printf("\tMAGNETO_Y = %d\n", pDataXYZ[1]);
-    snprintf(inner_buf, 50, "MAGNETO_Y = %d\n", pDataXYZ[1]);
-    strcat(buffer, inner_buf);
-    //printf("\tMAGNETO_Z = %d\n", pDataXYZ[2]);
-    snprintf(inner_buf, 50, "MAGNETO_Z = %d\n", pDataXYZ[2]);
+    snprintf(inner_buf, 50, "\t\"MAGNETO_XYZ\": [%d, %d, %d], \n", pDataXYZ[0], pDataXYZ[1], pDataXYZ[2]);
     strcat(buffer, inner_buf);
 
     BSP_GYRO_GetXYZ(pGyroDataXYZ);
-    //printf("\n\tGYRO_X = %.2f\n", pGyroDataXYZ[0]);
-    snprintf(inner_buf, 50, "\nGYRO_X = %.2f\n", pGyroDataXYZ[0]);
-    strcat(buffer, inner_buf);
-    //printf("\tGYRO_Y = %.2f\n", pGyroDataXYZ[1]);
-    snprintf(inner_buf, 50, "GYRO_Y = %.2f\n", pGyroDataXYZ[1]);
-    strcat(buffer, inner_buf);
-    //printf("\tGYRO_Z = %.2f\n", pGyroDataXYZ[2]);
-    snprintf(inner_buf, 50, "GYRO_Z = %.2f\n", pGyroDataXYZ[2]);
+    snprintf(inner_buf, 50, "\t\"GYRO_XYZ\": [%.2f, %.2f, %.2f], \n", pGyroDataXYZ[0], pGyroDataXYZ[1], pGyroDataXYZ[2]);
     strcat(buffer, inner_buf);
 
     BSP_ACCELERO_AccGetXYZ(pDataXYZ);
-    //printf("\n\tACCELERO_X = %d\n", pDataXYZ[0]);
-    snprintf(inner_buf, 50, "\nACCELERO_X = %d\n", pDataXYZ[0]);
+    snprintf(inner_buf, 50, "\t\"ACCELERO_XYZ\": [%d, %d, %d], \n", pDataXYZ[0], pDataXYZ[1], pDataXYZ[2]);
     strcat(buffer, inner_buf);
-    //printf("\tACCELERO_Y = %d\n", pDataXYZ[1]);
-    snprintf(inner_buf, 50, "ACCELERO_Y = %d\n", pDataXYZ[1]);
+
+    snprintf(inner_buf, 50, "\t\"SAMPLE_NUM\": %d\n", sample_num);
     strcat(buffer, inner_buf);
-    //printf("\tACCELERO_Z = %d\n", pDataXYZ[2]);
-    snprintf(inner_buf, 50, "ACCELERO_Z = %d\n", pDataXYZ[2]);
-    strcat(buffer, inner_buf);
+    strcat(buffer, "}\n");
 
     led = 0;
 
