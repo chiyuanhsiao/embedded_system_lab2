@@ -1,12 +1,6 @@
-![](./resources/official_armmbed_example_badge.png)
-# Socket Example
+# ES Lab HW2 Socket Programming
 
-This example shows usage of [network-socket API](https://os.mbed.com/docs/mbed-os/latest/apis/network-socket.html).
-
-The program brings up an underlying network interface and if it's Wifi also scans for access points.
-It creates a TCPSocket and performs an HTTP transaction targeting the website in the `mbed_app.json` config.
-
-The example can be configured to use a TLSSocket. This works only on devices that support TRNG.
+這份作業是關於利用tcp socket和board support package，來實做一個在stm32開發版上偵測數據，並回傳給電腦server去把資料視覺化。
 
 ## Selecting the network interface
 
