@@ -4,13 +4,13 @@
 
 ## How to Start
 
-## Archetecture
+## Architecture
 
 ### main.cpp
 
 ### server.py
 
-## Deme
+## Demo
 
 ## License
 
