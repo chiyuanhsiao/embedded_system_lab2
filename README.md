@@ -12,7 +12,9 @@
 
 4. 將BSP_B-L475E-IOT01放到mbed-os-example-sockets底下
 
-5. Build project
+5. 執行server/server.py以接收資料
+
+6. Build and run mbed-os-example-sockets
 
 
 ## Architecture
